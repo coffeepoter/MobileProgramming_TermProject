@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- 상단 안내 텍스트 -->
+        <TextView
+            android:id="@+id/tv_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="가입을 위해 몇 가지 정보만 입력해 주세요!"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="20dp" />
+
+        <!-- 이름 입력 -->
+        <EditText
+            android:id="@+id/et_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="이름"
+            android:inputType="textPersonName" />
+
+        <!-- 나이 입력 (달력) -->
+        <EditText
+            android:id="@+id/et_birthdate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="생년월일"
+            android:focusable="false"
+            android:clickable="true"
+            android:inputType="none" />
+
+        <!-- 아이디 입력 -->
+        <EditText
+            android:id="@+id/et_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="아이디"
+            android:inputType="text" />
+
+        <!-- 비밀번호 입력 -->
+        <EditText
+            android:id="@+id/et_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="비밀번호"
+            android:inputType="textPassword" />
+        <TextView
+            android:id="@+id/tv_password_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="비밀번호는 8-16자로 입력하세요."
+            android:textColor="#FF0000"
+            android:textSize="12sp"
+            android:visibility="gone" /> <!-- 처음에는 숨김 -->/>
+
+        <!-- 비밀번호 확인 -->
+        <EditText
+            android:id="@+id/et_confirm_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="비밀번호 확인"
+            android:inputType="textPassword" />
+
+        <!-- 성별 선택 -->
+        <RadioGroup
+            android:id="@+id/rg_gender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_male"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="남" />
+            <RadioButton
+                android:id="@+id/rb_female"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="여" />
+        </RadioGroup>
+
+        <!-- 회원가입 완료 버튼 -->
+        <Button
+            android:id="@+id/btn_register"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="회원가입 완료"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/round_btn"
+            android:layout_marginTop="20dp" />
+
+        <!-- 백경 이미지 -->
+        <ImageView
+            android:id="@+id/iv_logo"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:src="@drawable/pknu"
+            android:layout_marginTop="20dp" />
+    </LinearLayout>
+</ScrollView>
