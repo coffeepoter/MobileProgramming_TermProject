@@ -1,3 +1,5 @@
+import java.lang.System.getProperty
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
@@ -9,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.cookandroid.term_project"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -24,6 +26,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "MAPS_API_KEY", "\"${getProperty("MAPS_API_KEY")}\"")
         }
     }
     compileOptions {
@@ -48,6 +51,10 @@ dependencies {
 
     // Maps SDK for Android
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+
+    // Places SKD for Android
+//    implementation(platform("org.jetbrains.kotlin:kotlin-bom:$kotlin_version"))
+    implementation("com.google.android.libraries.places:places:3.5.0")
 }
 
 secrets {

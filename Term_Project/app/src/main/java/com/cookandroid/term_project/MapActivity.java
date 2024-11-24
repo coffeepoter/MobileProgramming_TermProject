@@ -4,7 +4,9 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.Toast;
@@ -15,24 +17,45 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.cookandroid.term_project.utils.PermissionUtils;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class MapActivity extends AppCompatActivity
         implements
         GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMyLocationClickListener,
         OnMapReadyCallback,
-        ActivityCompat.OnRequestPermissionsResultCallback {
-
+        ActivityCompat.OnRequestPermissionsResultCallback{
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int MY_LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int LOCATION_LAYER_PERMISSION_REQUEST_CODE = 2;
     private boolean permissionDenied = false;
     private boolean mLocationPermissionDenied = false;
+
+    private FusedLocationProviderClient fusedLocationClient;
+
 
     private GoogleMap map;
     private UiSettings Uisettings;
@@ -46,6 +69,8 @@ public class MapActivity extends AppCompatActivity
 
         mMyLocationButtonCheckbox = (CheckBox) findViewById(R.id.mylocationbutton_toggle);
         mMyLocationLayerCheckbox = (CheckBox) findViewById(R.id.mylocationlayer_toggle);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -98,8 +123,6 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables the zoom controls (+/- buttons in the bottom-right of the map for LTR
-        // locale or bottom-left for RTL locale).
         Uisettings.setZoomControlsEnabled(((CheckBox) v).isChecked());
     }
 
@@ -107,8 +130,6 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables the compass (icon in the top-left for LTR locale or top-right for RTL
-        // locale that indicates the orientation of the map).
         Uisettings.setCompassEnabled(((CheckBox) v).isChecked());
     }
 
@@ -116,15 +137,10 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables the my location button (this DOES NOT enable/disable the my location
-        // dot/chevron on the map). The my location button will never appear if the my location
-        // layer is not enabled.
-        // First verify that the location permission has been granted.
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             Uisettings.setMyLocationButtonEnabled(mMyLocationButtonCheckbox.isChecked());
         } else {
-            // Uncheck the box and request missing location permission.
             mMyLocationButtonCheckbox.setChecked(false);
             requestLocationPermission(MY_LOCATION_PERMISSION_REQUEST_CODE);
         }
@@ -134,14 +150,10 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables the my location layer (i.e., the dot/chevron on the map). If enabled, it
-        // will also cause the my location button to show (if it is enabled); if disabled, the my
-        // location button will never show.
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             map.setMyLocationEnabled(mMyLocationLayerCheckbox.isChecked());
         } else {
-            // Uncheck the box and request missing location permission.
             mMyLocationLayerCheckbox.setChecked(false);
             PermissionUtils.requestPermission(this, LOCATION_LAYER_PERMISSION_REQUEST_CODE,
                     Manifest.permission.ACCESS_FINE_LOCATION, false);
@@ -152,7 +164,6 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables scroll gestures (i.e. panning the map).
         Uisettings.setScrollGesturesEnabled(((CheckBox) v).isChecked());
     }
 
@@ -160,7 +171,6 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables zoom gestures (i.e., double tap, pinch & stretch).
         Uisettings.setZoomGesturesEnabled(((CheckBox) v).isChecked());
     }
 
@@ -168,7 +178,6 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables tilt gestures.
         Uisettings.setTiltGesturesEnabled(((CheckBox) v).isChecked());
     }
 
@@ -176,23 +185,16 @@ public class MapActivity extends AppCompatActivity
         if (!checkReady()) {
             return;
         }
-        // Enables/disables rotate gestures.
         Uisettings.setRotateGesturesEnabled(((CheckBox) v).isChecked());
     }
 
-    /**
-     * Requests the fine location permission. If a rationale with an additional explanation should
-     * be shown to the user, displays a dialog that triggers the request.
-     */
     public void requestLocationPermission(int requestCode) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)) {
-            // Display a dialog with rationale.
             PermissionUtils.RationaleDialog
                     .newInstance(requestCode, false).show(
                             getSupportFragmentManager(), "dialog");
         } else {
-            // Location permission has not been granted yet, request it.
             PermissionUtils.requestPermission(this, requestCode,
                     Manifest.permission.ACCESS_FINE_LOCATION, false);
         }
@@ -202,30 +204,46 @@ public class MapActivity extends AppCompatActivity
     // 현위치 표시 관련
     @SuppressLint("MissingPermission")
     private void enableMyLocation() {
-        // 1. Check if permissions are granted, if so, enable the my location layer
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             map.setMyLocationEnabled(true);
-            return;
         }
 
-        // 2. Otherwise, request location permissions from the user.
-//        PermissionUtils.requestLocationPermissions(this, LOCATION_PERMISSION_REQUEST_CODE, true);
     }
 
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
-        // Return false so that we don't consume the event and the default behavior still occurs
-        // (the camera animates to the user's current position).
-        return false;
+        // 현재 위치를 가져와서 findNearbyCafes 호출
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // 권한이 없으면 요청
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return false;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            // 현재 위치가 null이 아닐 경우 findNearbyCafes 호출
+                            LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15)); // 줌 레벨 15
+                            findNearbyCafes(location);
+                        } else {
+                            Toast.makeText(MapActivity.this, "Unable to get current location", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+
+        return true;
     }
+
 
     @Override
     public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -240,11 +258,9 @@ public class MapActivity extends AppCompatActivity
                 android.Manifest.permission.ACCESS_FINE_LOCATION) || PermissionUtils
                 .isPermissionGranted(permissions, grantResults,
                         android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
-            // Enable the my location layer if the permission has been granted.
             enableMyLocation();
         } else {
-            // Permission was denied. Display an error message
-            // ...
+            Toast.makeText(this, "Error!!", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -252,7 +268,6 @@ public class MapActivity extends AppCompatActivity
     protected void onResumeFragments() {
         super.onResumeFragments();
         if (permissionDenied) {
-            // Permission was not granted, display error dialog.
             showMissingPermissionError();
             permissionDenied = false;
         }
@@ -262,6 +277,88 @@ public class MapActivity extends AppCompatActivity
         PermissionUtils.PermissionDeniedDialog
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
+
+    // Place API
+    private void findNearbyCafes(Location location) {
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+        String apiKey = BuildConfig.PLACES_API_KEY;
+
+        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                "?location=" + latitude + "," + longitude +
+                "&radius=1000" +
+                "&type=cafe" +
+                "&key=" + apiKey;
+
+        new GetNearbyCafesTask().execute(url);
+    }
+
+    private class GetNearbyCafesTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... urls) {
+            StringBuilder result = new StringBuilder();
+            HttpURLConnection urlConnection = null;
+
+            try {
+                URL url = new URL(urls[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("GET");
+                urlConnection.connect();
+
+                // 응답 코드 확인
+                int responseCode = urlConnection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                    String line;
+
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    reader.close();
+                } else {
+                    Log.e("API_ERROR", "Response Code: " + responseCode);
+                    return null; // 오류 발생 시 null 반환
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+            }
+
+            Log.d("API_RESPONSE", result.toString());
+            return result.toString();
+        }
+
+        @Override
+        protected void onPostExecute(String jsonResponse) {
+            Log.d("JSON_RESPONSE", jsonResponse);
+
+            // JSON 파싱 및 카페 마커 추가
+            try {
+                JSONObject jsonRoot = new JSONObject(jsonResponse);
+                JSONArray results = jsonRoot.getJSONArray("results");
+
+                for (int i = 0; i < results.length(); i++) {
+                    JSONObject cafe = results.getJSONObject(i);
+                    double lat = cafe.getJSONObject("geometry").getJSONObject("location").getDouble("lat");
+                    double lng = cafe.getJSONObject("geometry").getJSONObject("location").getDouble("lng");
+                    double rating = cafe.optDouble("rating", 0);
+
+                    if (rating >= 4.0) {
+                        LatLng cafeLocation = new LatLng(lat, lng);
+                        map.addMarker(new MarkerOptions().position(cafeLocation).title(cafe.getString("name")));
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
 }
 
       
