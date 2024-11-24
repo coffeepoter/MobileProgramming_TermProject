@@ -131,6 +131,8 @@ public class MapActivity extends AppCompatActivity
             }
         });
         enableMyLocation();
+
+        onMyLocationButtonClick();
     }
 
     // UI 표시
