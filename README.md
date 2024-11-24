@@ -15,7 +15,7 @@
   </tr>
   <tr>
     <td>메인 페이지</td>
-    <td></td>
+    <td>회원가입 페이지</td>
   </tr>
 </tbody>
 </table>
