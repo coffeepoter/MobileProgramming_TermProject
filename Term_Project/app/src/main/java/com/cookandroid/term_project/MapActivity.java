@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,7 +18,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.cookandroid.term_project.utils.PermissionUtils;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -28,8 +28,8 @@ import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.libraries.places.api.model.Place;
-import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -103,6 +103,33 @@ public class MapActivity extends AppCompatActivity
         }
         map.setMyLocationEnabled(isChecked(R.id.mylocationlayer_toggle));
 
+        // Marker 클릭 시 정보 표현
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker clickedMarker) {
+                clickedMarker.showInfoWindow();
+                return true; // 기본 동작을 방지
+            }
+        });
+
+        map.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            public View getInfoWindow(Marker marker) {
+                return null; // 기본 InfoWindow 사용
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                View view = getLayoutInflater().inflate(R.layout.info_window, null);
+                TextView title = view.findViewById(R.id.title);
+                TextView snippet = view.findViewById(R.id.snippet);
+
+                title.setText(marker.getTitle());
+                snippet.setText(marker.getSnippet());
+
+                return view;
+            }
+        });
         enableMyLocation();
     }
 
@@ -230,7 +257,7 @@ public class MapActivity extends AppCompatActivity
                         if (location != null) {
                             // 현재 위치가 null이 아닐 경우 findNearbyCafes 호출
                             LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15)); // 줌 레벨 15
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 17));
                             findNearbyCafes(location);
                         } else {
                             Toast.makeText(MapActivity.this, "Unable to get current location", Toast.LENGTH_SHORT).show();
@@ -346,10 +373,21 @@ public class MapActivity extends AppCompatActivity
                     double lat = cafe.getJSONObject("geometry").getJSONObject("location").getDouble("lat");
                     double lng = cafe.getJSONObject("geometry").getJSONObject("location").getDouble("lng");
                     double rating = cafe.optDouble("rating", 0);
+                    String address = cafe.optString("vicinity", "주소 정보 없음"); // 주소 정보
+                    String openNow = cafe.optJSONObject("opening_hours") != null && cafe.getJSONObject("opening_hours").optBoolean("open_now", false) ? "현재 영업 중" : "현재 영업 종료"; // 영업 시간 정보
+                    String userRatingsTotal = cafe.optString("user_ratings_total", "0"); // 사용자 평점 수
 
                     if (rating >= 4.0) {
                         LatLng cafeLocation = new LatLng(lat, lng);
-                        map.addMarker(new MarkerOptions().position(cafeLocation).title(cafe.getString("name")));
+                        MarkerOptions markerOptions = new MarkerOptions()
+                                .position(cafeLocation)
+                                .title(cafe.getString("name"))
+                                .snippet("평점: " + rating + "\n" +
+                                        "사용자 평점 수: " + userRatingsTotal + "\n" +
+                                        "주소: " + address + "\n" +
+                                        openNow); // 추가 정보
+
+                        map.addMarker(markerOptions);
                     }
                 }
             } catch (JSONException e) {
