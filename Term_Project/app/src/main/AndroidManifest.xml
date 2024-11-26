@@ -43,6 +43,10 @@
             android:name=".MapActivity"
             android:exported="true">
         </activity>
+        <activity
+            android:name=".MapRatingActivity"
+            android:exported="true">
+        </activity>
     </application>
 
 </manifest>

@@ -2,6 +2,7 @@ package com.cookandroid.term_project;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
@@ -75,6 +76,14 @@ public class MapActivity extends AppCompatActivity
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        // Ranking 버튼 클릭 시 map_rating.xml로 이동
+        findViewById(R.id.ranking).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MapActivity.this, MapRatingActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -400,5 +409,3 @@ public class MapActivity extends AppCompatActivity
     }
 
 }
-
-      

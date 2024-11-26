@@ -1,5 +1,5 @@
 package com.cookandroid.term_project;
-
+import android.content.Intent;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.Editable;
@@ -86,8 +86,15 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        // 회원가입 완료 메시지
         showAlert("회원가입이 완료되었습니다. 환영합니다 " + name + "님!");
+
+        // map_main.xml로 이동
+        Intent intent = new Intent(RegisterActivity.this, MapActivity.class);
+        startActivity(intent);
+        finish(); // 현재 액티비티 종료
     }
+
 
     private void showAlert(String message) {
         new AlertDialog.Builder(this)
