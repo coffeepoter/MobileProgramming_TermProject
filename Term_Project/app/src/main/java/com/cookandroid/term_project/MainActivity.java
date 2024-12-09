@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button mapBtn, loginBtn;
+    Button mapBtn, loginBtn, signUpBtn;
     EditText usernameEditText, passwordEditText;
 
     @Override
@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
 
         mapBtn = (Button) findViewById(R.id.map);
         loginBtn = (Button) findViewById(R.id.login);
+        signUpBtn = (Button) findViewById(R.id.sign_up);
         usernameEditText = (EditText) findViewById(R.id.username);
         passwordEditText = (EditText) findViewById(R.id.password);
 
@@ -39,6 +40,14 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(MainActivity.this, "아이디 또는 비밀번호가 잘못되었습니다.", Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        signUpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), RegisterActivity.class);
+                startActivity(intent);
             }
         });
 
