@@ -76,11 +76,21 @@ public class MapActivity extends AppCompatActivity
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
         // Ranking 버튼 클릭 시 map_rating.xml로 이동
         findViewById(R.id.ranking).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MapActivity.this, MapRatingActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        // Distance 버튼 클릭 시 map_distance.xml로 이동
+        findViewById(R.id.distance).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MapActivity.this, DistanceActivity.class);
                 startActivity(intent);
             }
         });
